@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+ 
+    <head>
+        <script src="src/jquery-3.5.0.min.js"></script>
+        <script src="src/bootstrap.bundle.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="src/bootstrap.min.css">
+    </head>
+ 
+    <body>
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+                <h1 class="display-4">WIFI and MQTT configuration</h1>
+            </div>
+            <div class="container">
+                <form method="POST" action="form_submit">
+                    <h3>WIFI Data:</h3>
+                    <div class="form-group row">
+                        <label for="colFormSSID" class="col-sm-2 col-form-label">SSID</label>
+                        <div class="col-sm-10">
+                            %INPUT_FORM_SSID%
+							<!--<input type="text" class="form-control" name="SSID" id="colFormSSID" placeholder="SSID" required>-->
+							<small  class="form-text text-muted">SSID of the wireless network to connect to</small>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="colFormWIFIKey" class="col-sm-2 col-form-label">Key</label>
+                        <div class="col-sm-10">
+                            %INPUT_FORM_WIFI_KEY%
+							<!--<input type="password" class="form-control" name="WIFIKey" id="colFormWIFIKey" placeholder="WIFI Key" required>-->
+							<small class="form-tex text-muted">Key for the wireless network</small>
+                        </div>
+                    </div>
+                    <h3>MQTT Data</h3>
+                    <div class="form-group row">
+                        <label for="colFormMQTTBroker" class="col-sm-2 col-form-label">Broker</label>
+                        <div class="col-sm-10">
+                            %INPUT_FORM_MQTT_BROKER%
+							<!--<input type="text" class="form-control" name="MQTTBroker" id="colFormMQTTBroker" placeholder="MQTT Broker" required>-->
+							<small class="form-tex text-muted">IP or hostname of the MQTT broker. Port is currently hard coded (1893)</small>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="colFormMQTTUser" class="col-sm-2 col-form-label">User</label>
+                        <div class="col-sm-10">
+                            %INPUT_FORM_MQTT_USER%
+							<!--<input type="text" class="form-control" name="MQTTUser" id="colFormMQTTUser" placeholder="MQTT User" required>-->
+							<small class="form-tex text-muted">Username for the MQTT broker</small>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="colFormMQTTPassword" class="col-sm-2 col-form-label">Password</label>
+                        <div class="col-sm-10">
+                            %INPUT_FORM_MQTT_PASSWORD%
+							<!--<input type="password" class="form-control" name="MQTTPassword" id="colFormMQTTPassword" placeholder="MQTT Password" required>-->
+							<small class="form-tex text-muted">Password for the MQTT broker</small>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="colFormMQTTTopic" class="col-sm-2 col-form-label">Topic</label>
+                        <div class="col-sm-10">
+                            %INPUT_FORM_MQTT_TOPIC%
+							<!--<input type="password" class="form-control" name="MQTTTopic" id="colFormMQTTTopic" placeholder="MQTT Topic" required>-->
+							<small class="form-tex text-muted">
+								Topic for the sensor. the sensor reports data with <code>%this_topic%/state</code><br>
+								<ul>
+									<li>Sleep duration of the ESP can be set with <code>%this_topic%/SleepTime</code> (must be between 1[s]...3600[s])</li>
+									<li>
+										Operation mode can be set with <code>%this_topic%/Mode</code><br>
+										<ul>
+											<li><b>CONFIG:</b> ESP reboots and starts webserver</li>
+											<li><b>AP:</b> ESP reboots, starts access point (192.168.4.1) and starts webserver</li>
+										</ul>
+									</li>
+								</ul>
+							</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mb-2">Save & Reboot</button>
+				</form>
+            </div>
+        </div>
+    </body>
+
+</html>
