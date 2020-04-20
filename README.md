@@ -82,5 +82,5 @@ STATE | CONDITION | NEXT STATE | DESCRIPTION
  ```OPERATION``` | _(none)_ | ```DEEP_SLEEP``` | A MQTT message with the status and the sensor readings is published in this state. Afterwards, ESP is being put into deep sleep
  ```DEEP_SLEEP``` | _(none)_ | _(none)_ | sleeping. A state message is published before ESP goes to sleep
 
-If the configuration it OK a normal state transition looks like the following
+If the configuration is OK and connection to WiFi and MQTT is succesful, a normal state transition looks like the following
 ```START``` &rarr; ```READ_CONFIG``` &rarr; ```CONNECT_WIFI``` &rarr; ```CONNECT_WIFI``` &rarr; ```OPERATION``` &rarr; ```DEEP_SLEEP```
