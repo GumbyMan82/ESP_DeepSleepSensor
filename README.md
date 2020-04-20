@@ -37,7 +37,7 @@ The message payload is a JSON formatted string
 ```SleepTime``` is the amount of seconds that the ESP is currently going to sleep. 
 
 
-## Changing the sleep tme
+## Changing the sleep time
 The MQTT client automatically subscribes to ```<configured_topic>/SleepTime``` for changing the time in seconds for which the ESP should go into deep sleep. Maximum value is 3600s. Any value outside of 0...3600s will fallback to 
 ```C++
 /**
