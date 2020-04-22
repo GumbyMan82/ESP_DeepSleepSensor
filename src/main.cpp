@@ -7,6 +7,8 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 
+const char* version = "1.0";
+
 //################# DEFINES ################
 /**
  * conversion factor from microseconds in seconds
@@ -801,7 +803,7 @@ void Reboot()
  * @param var The response with templates from the webserver. See AsyncWebserver documentation
  */ 
 String Processor(const String& var){
-	Serial.println(var);
+	
 
 	if(var == "SSID"){
 		return WiFi_SSID;
@@ -833,6 +835,10 @@ String Processor(const String& var){
 
 	if(var == "TRIGGER_OUTPUT"){
 		return String(TriggerOutput);
+	}
+
+	if(var == "VERSION"){
+		return version;
 	}
 	return String();
 }

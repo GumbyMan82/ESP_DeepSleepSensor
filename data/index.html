@@ -8,86 +8,95 @@
     </head>
  
     <body>
-        <div class="jumbotron jumbotron-fluid">
+        <div class="jumbotron">
             <div class="container">
-                <h1 class="display-4">WIFI and MQTT configuration</h1>
-            </div>
-            <div class="container">
-                <form method="POST" action="form_submit">
-					<h3>General settings:</h3>
-					<div class="form-group row">
-                        <label for="colFormAnalogInput" class="col-sm-2 col-form-label">Analog input</label>
-                        <div class="col-sm-10">
-							<input type="text" class="form-control" name="AnalogInput" id="colFormANIN" placeholder="Analog Input" value="%ANALOG_INPUT%" required>
-							<small  class="form-text text-muted"># of the analog input the sensor is connected to</small>
-                        </div>
-					</div>
-					<div class="form-group row">
-                        <label for="colFormAnalogInput" class="col-sm-2 col-form-label">Trigger output</label>
-                        <div class="col-sm-10">
-							<input type="text" class="form-control" name="TriggerOutput" id="colFormTrigger" placeholder="Trigger output" value="%TRIGGER_OUTPUT%" required>
-							<small  class="form-text text-muted"># of the digital output for the sensor trigger</small>
-                        </div>
-                    </div>
-
-                    <h3>WIFI Data:</h3>
-                    <div class="form-group row">
-                        <label for="colFormSSID" class="col-sm-2 col-form-label">SSID</label>
-                        <div class="col-sm-10">
-							<input type="text" class="form-control" name="SSID" id="colFormSSID" placeholder="SSID" value="%SSID%" required>
-							<small  class="form-text text-muted">SSID of the wireless network to connect to</small>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="colFormWIFIKey" class="col-sm-2 col-form-label">Key</label>
-                        <div class="col-sm-10">
-							<input type="password" class="form-control" name="WIFIKey" id="colFormWIFIKey" placeholder="WIFI Key" required value="%WIFI_KEY%">
-							<small class="form-tex text-muted">Key for the wireless network</small>
-                        </div>
-                    </div>
-                    <h3>MQTT Data</h3>
-                    <div class="form-group row">
-                        <label for="colFormMQTTBroker" class="col-sm-2 col-form-label">Broker</label>
-                        <div class="col-sm-10">
-							<input type="text" class="form-control" name="MQTTBroker" id="colFormMQTTBroker" placeholder="MQTT Broker" value="%MQTT_BROKER%" required>
-							<small class="form-tex text-muted">IP or hostname of the MQTT broker. Port is currently hard coded (1893)</small>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="colFormMQTTUser" class="col-sm-2 col-form-label">User</label>
-                        <div class="col-sm-10">
-							<input type="text" class="form-control" name="MQTTUser" id="colFormMQTTUser" placeholder="MQTT User" value="%MQTT_USER%" required>
-							<small class="form-tex text-muted">Username for the MQTT broker</small>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="colFormMQTTPassword" class="col-sm-2 col-form-label">Password</label>
-                        <div class="col-sm-10">
-							<input type="password" class="form-control" name="MQTTPassword" id="colFormMQTTPassword" placeholder="MQTT Password" value="%MQTT_PASSWORD%" required>
-							<small class="form-tex text-muted">Password for the MQTT broker</small>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="colFormMQTTTopic" class="col-sm-2 col-form-label">Topic</label>
-                        <div class="col-sm-10">
-							<input type="password" class="form-control" name="MQTTTopic" id="colFormMQTTTopic" placeholder="MQTT Topic" value="%MQTT_TOPIC%" required>
-							<small class="form-tex text-muted">
-								Topic for the sensor. the sensor reports data with <code>this_topic/state</code><br>
-								<ul>
-									<li>Sleep duration of the ESP can be set with <code>this_topic/SleepTime</code> (must be between 1[s]...3600[s])</li>
-									<li>
-										Operation mode can be set with <code>this_topic/Mode</code><br>
+				<div class="container">
+					<h1 class="display-4">DeepSleepSensor</h1>
+					<p class="text-muted">Version: %VERSION%</small>
+					<hr class="my-4" />
+				</div>
+				<div class="container">
+					<form method="POST" action="form_submit">
+						<div class="container bg-light">
+							<p class="lead">General settings:</p>
+							<div class="form-group row">
+								<label for="colFormAnalogInput" class="col-sm-2 col-form-label">Analog input</label>
+								<div class="col-sm-10">
+									<input type="text" class="form-control" name="AnalogInput" id="colFormANIN" placeholder="Analog Input" value="%ANALOG_INPUT%" required>
+									<small  class="form-text text-muted"># of the analog input the sensor is connected to</small>
+								</div>
+							</div>
+							<div class="form-group row">
+								<label for="colFormAnalogInput" class="col-sm-2 col-form-label">Trigger output</label>
+								<div class="col-sm-10">
+									<input type="text" class="form-control" name="TriggerOutput" id="colFormTrigger" placeholder="Trigger output" value="%TRIGGER_OUTPUT%" required>
+									<small  class="form-text text-muted"># of the digital output for the sensor trigger</small>
+								</div>
+							</div>
+						</div>
+						<div class="container bg-light">
+							<p class="lead">WIFI Data:</p>
+							<div class="form-group row">
+								<label for="colFormSSID" class="col-sm-2 col-form-label">SSID</label>
+								<div class="col-sm-10">
+									<input type="text" class="form-control" name="SSID" id="colFormSSID" placeholder="SSID" value="%SSID%" required>
+									<small  class="form-text text-muted">SSID of the wireless network to connect to</small>
+								</div>
+							</div>
+							<div class="form-group row">
+								<label for="colFormWIFIKey" class="col-sm-2 col-form-label">Key</label>
+								<div class="col-sm-10">
+									<input type="password" class="form-control" name="WIFIKey" id="colFormWIFIKey" placeholder="WIFI Key" required value="%WIFI_KEY%">
+									<small class="form-tex text-muted">Key for the wireless network</small>
+								</div>
+							</div>
+						</div>
+						<div class="container bg-light">
+							<p class="leas">MQTT Data</p>
+							<div class="form-group row">
+								<label for="colFormMQTTBroker" class="col-sm-2 col-form-label">Broker</label>
+								<div class="col-sm-10">
+									<input type="text" class="form-control" name="MQTTBroker" id="colFormMQTTBroker" placeholder="MQTT Broker" value="%MQTT_BROKER%" required>
+									<small class="form-tex text-muted">IP or hostname of the MQTT broker. Port is currently hard coded (1893)</small>
+								</div>
+							</div>
+							<div class="form-group row">
+								<label for="colFormMQTTUser" class="col-sm-2 col-form-label">User</label>
+								<div class="col-sm-10">
+									<input type="text" class="form-control" name="MQTTUser" id="colFormMQTTUser" placeholder="MQTT User" value="%MQTT_USER%" required>
+									<small class="form-tex text-muted">Username for the MQTT broker</small>
+								</div>
+							</div>
+							<div class="form-group row">
+								<label for="colFormMQTTPassword" class="col-sm-2 col-form-label">Password</label>
+								<div class="col-sm-10">
+									<input type="password" class="form-control" name="MQTTPassword" id="colFormMQTTPassword" placeholder="MQTT Password" value="%MQTT_PASSWORD%" required>
+									<small class="form-tex text-muted">Password for the MQTT broker</small>
+								</div>
+							</div>
+							<div class="form-group row">
+								<label for="colFormMQTTTopic" class="col-sm-2 col-form-label">Topic</label>
+								<div class="col-sm-10">
+									<input type="password" class="form-control" name="MQTTTopic" id="colFormMQTTTopic" placeholder="MQTT Topic" value="%MQTT_TOPIC%" required>
+									<small class="form-tex text-muted">
+										Topic for the sensor. the sensor reports data with <code>this_topic/state</code><br>
 										<ul>
-											<li><b>CONFIG:</b> ESP reboots and starts webserver</li>
-											<li><b>AP:</b> ESP reboots, starts access point (192.168.4.1) and starts webserver</li>
+											<li>Sleep duration of the ESP can be set with <code>this_topic/SleepTime</code> (must be between 1[s]...3600[s])</li>
+											<li>
+												Operation mode can be set with <code>this_topic/Mode</code><br>
+												<ul>
+													<li><b>CONFIG:</b> ESP reboots and starts webserver</li>
+													<li><b>AP:</b> ESP reboots, starts access point (192.168.4.1) and starts webserver</li>
+												</ul>
+											</li>
 										</ul>
-									</li>
-								</ul>
-							</small>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary mb-2">Save & Reboot</button>
-				</form>
+									</small>
+								</div>
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary mb-2">Save & Reboot</button>
+					</form>
+				</div>
             </div>
         </div>
     </body>
