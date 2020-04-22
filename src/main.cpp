@@ -50,16 +50,6 @@
 #define MQTT_CONNECTION_RETRIES	10
 
 /**
- * Analog input to which the sensor is connected to
- */ 
-#define ANALOG_INPUT 	A0
-
-/**
- * Output that provides 3.3V to the sensor
- */ 
-#define SENSOR_V33_OUTPUT (uint8_t)26
-
-/**
  * Usually the MQTT client runs in his loop dwithin the loop function
  * Since we are going to deep_sleep we need to make sure that at least some loops are processed
  * in order to retrieve data from the broker. Maybe fewer runs are possible, but 10 does not hurt
@@ -162,6 +152,16 @@ String MqttPassword =	"";
  * MQTT Topic
  */
 String MqttTopic = "";
+
+/**
+ * Analog input to which the sensor is connected to
+ */ 
+int AnalogInput = -1;
+
+/**
+ * Triggering output for the sensor
+ */ 
+int TriggerOutput = -1;
 
 /**
  * State of the configuration data
@@ -353,11 +353,19 @@ void print_wakeup_reason(){
  * @param PowerChannel Digital output that powers the sensor
  */
 uint16_t ReadAnalogValue(uint8_t ADCChannel, int PowerChannel){
+	
+	//fail fast if parameters are wrong
+	if(ADCChannel < 0 || ADCChannel > 255)
+		return 0;
+	
+	if(PowerChannel < 0 || PowerChannel > 255)
+		return 0;
+	
 	int i = 0;
 	int filter = 10;
 	uint32_t tmp = 0;
 	float f_value = 0.0;
-	
+	pinMode(TriggerOutput, OUTPUT);
 	
 	digitalWrite(PowerChannel, HIGH);
 	delay(100);
@@ -382,7 +390,7 @@ void PublishState(){
 	{
 		char cJSONString[80];
 		cJSONString[0] = '\0';
-		sprintf(cJSONString, "{\"state\" : \"ON\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ", ReadAnalogValue(ANALOG_INPUT, SENSOR_V33_OUTPUT), GetSleepDelaySecondsOrDefault());
+		sprintf(cJSONString, "{\"state\" : \"ON\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ", ReadAnalogValue(AnalogInput, TriggerOutput), GetSleepDelaySecondsOrDefault());
 		Serial.println(cJSONString);
 		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), cJSONString);
 	}
@@ -579,6 +587,48 @@ void SetMQTTBroker(String broker){
 
 
 /**
+ * Saves the index of the analog sensor input
+ * @param index Index to be saved
+ */ 
+void SetSensorInput(int index)
+{
+	delay(100);
+	preferences.putInt("AnalogInput", index);
+}
+
+
+/**
+ * Reads the index of the analog sensor input
+ * @return the index of the analog input
+ */ 
+int GetSensorInput()
+{
+	delay(100);
+	return preferences.getInt("AnalogInput", -1);
+}
+
+
+/**
+ * Saves the index of the trigger output for the sensor
+ * @param index Index to be saved
+ */ 
+void SetTriggerOutput(int index)
+{
+	preferences.putInt("TriggerOutput", index);
+}
+
+
+/**
+ * Reads the index of the trigger output for the sensor
+ * @return The index if the digital output
+ */ 
+int GetTriggerOutput()
+{
+	return preferences.getInt("TriggerOutput", -1);
+}
+
+
+/**
  * Reads the configuration
  * @return returns if reading the config had an error (e.g. no WIFI or MQTT credentials)
  */
@@ -594,6 +644,9 @@ ConfigState ReadConfig(){
 	MqttPassword = GetMQTTPassword();
 	MqttUser = GetMQTTUser();
 	MqttTopic = GetMQTTTopic();
+	AnalogInput = GetSensorInput();
+	TriggerOutput = GetTriggerOutput();
+
 
 	Serial.print("Sleeptime in [s]: ");
 	Serial.println(SleepTimeSeconds);
@@ -609,10 +662,11 @@ ConfigState ReadConfig(){
 	Serial.println(MqttPassword);
 	Serial.print("MQTT Topic: ");
 	Serial.println(MqttTopic);
+	Serial.print("Sensor Input: ");
+	Serial.println(AnalogInput);
+	Serial.print("Trigger Output: ");
+	Serial.println(TriggerOutput);
 
-	
-
-	//preferences.end();
 
 	if((WiFi_SSID.length() == 0) || (WiFi_KEY.length()==0))
 	{
@@ -706,6 +760,20 @@ void SaveWebConfigData(AsyncWebServerRequest *request){
 		SetMQTTTopic(message);
 	}
 
+	//save analog input
+	if(request->hasParam("AnalogInput", true)){
+		message = request->getParam("AnalogInput", true)->value();
+		SetSensorInput(message.toInt());
+	}
+
+	//save trigger output
+	if(request->hasParam("TriggerOutput", true)){
+		message = request->getParam("TriggerOutput", true)->value();
+		SetTriggerOutput(message.toInt());
+	}
+
+	
+
 	//preferences.end();
 }
 
@@ -735,30 +803,37 @@ void Reboot()
 String Processor(const String& var){
 	Serial.println(var);
 
-	if(var == "INPUT_FORM_SSID"){
-		return "<input type=\"text\" class=\"form-control\" name=\"SSID\" id=\"colFormSSID\" placeholder=\"SSID\" value=\"" + WiFi_SSID + "\" required>";
+	if(var == "SSID"){
+		return WiFi_SSID;
 	}
 
-	if(var == "INPUT_FORM_WIFI_KEY"){
-		return "<input type=\"password\" class=\"form-control\" name=\"WIFIKey\" id=\"colFormWIFIKey\" placeholder=\"WIFI Key\" value=\"" + WiFi_KEY + "\" required>";
+	if(var == "WIFI_KEY"){
+		return WiFi_KEY;
 	}
 
-	if(var == "INPUT_FORM_MQTT_BROKER"){
-		return "<input type=\"text\" class=\"form-control\" name=\"MQTTBroker\" id=\"colFormMQTTBroker\" placeholder=\"MQTT Broker\" value=\"" + MqttBroker + "\" required>";
+	if(var == "MQTT_BROKER"){
+		return MqttBroker;
 	}
 
-	if(var == "INPUT_FORM_MQTT_USER"){
-		return "<input type=\"text\" class=\"form-control\" name=\"MQTTUser\" id=\"colFormMQTTUser\" placeholder=\"MQTT User\" value=\"" + MqttUser + "\" required>";
+	if(var == "MQTT_USER"){
+		return MqttUser;
 	}
 
-	if(var == "INPUT_FORM_MQTT_PASSWORD"){
-		return "<input type=\"password\" class=\"form-control\" name=\"MQTTPassword\" id=\"colFormMQTTPassword\" placeholder=\"MQTT Password\" value=\"" + MqttPassword + "\" required>";
+	if(var == "MQTT_PASSWORD"){
+		return MqttPassword;
 	}
 
-	if(var == "INPUT_FORM_MQTT_TOPIC"){
-		return "<input type=\"text\" class=\"form-control\" name=\"MQTTTopic\" id=\"colFormMQTTTopic\" placeholder=\"MQTT Topic\" value=\"" + MqttTopic + "\" required>";
+	if(var == "MQTT_TOPIC"){
+		return MqttTopic;
 	}
 
+	if(var == "ANALOG_INPUT"){
+		return String(AnalogInput);
+	}
+
+	if(var == "TRIGGER_OUTPUT"){
+		return String(TriggerOutput);
+	}
 	return String();
 }
 
@@ -919,7 +994,6 @@ void setup(){
 	SleepTimeSeconds = 0;
 	Serial.begin(9800);
   	delay(1000); //Take some time to open up the Serial Monitor
-	pinMode(SENSOR_V33_OUTPUT, OUTPUT);
 	DebugBlink(1);
 	RequestNewConfig = false;
 	RequestStartAP = false;
