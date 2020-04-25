@@ -6,6 +6,7 @@
 #include <string>
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
+#include <Ticker.h>
 
 const char* version = "1.0";
 
@@ -15,6 +16,13 @@ const char* version = "1.0";
  * Noted in 64bit since the sleep function requires 64bit
  */ 
 #define uS_TO_S_FACTOR 1000000LL
+
+
+/** 
+ * Maximum runtime after which the ESP reboots
+ */
+#define MAX_RUNTIME_S 1800
+
 
 /**
  * The default sleep time in [s]
@@ -239,6 +247,10 @@ AsyncWebServer server(80);
  */
 DNSServer dnsServer;
 
+/**
+ * Ticker that reboots the ESP when elapsed
+ */
+Ticker rebootTicker;
 
 //################# runtime data ################
 
@@ -707,6 +719,15 @@ void StartAP(){
 
 
 /**
+ * starts a watchdog and resets the ESP after the time has elapses
+ */ 
+void WatchDog(int time)
+{
+
+}
+
+
+/**
  * Saves the data from the Webform to SPIFFS
  * @param AsyncWebServerRequest The request from the Webserver
  */
@@ -803,7 +824,7 @@ void Reboot()
  * @param var The response with templates from the webserver. See AsyncWebserver documentation
  */ 
 String Processor(const String& var){
-	
+
 
 	if(var == "SSID"){
 		return WiFi_SSID;
@@ -851,6 +872,7 @@ void StartWebServer(){
 	Serial.println("");
 	Serial.println("========== StartWebServer() ==========");
 	Serial.println("Starting Webserver");
+
 	dnsServer.start(DNSPort, "*", apIP);
 
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -1005,6 +1027,10 @@ void setup(){
 	RequestStartAP = false;
 	preferences.begin("ESPSensor", false);
 
+	//when the ESP ran for MAX_RUNTIME_S, reboot it. It could be that the ESP accidentally
+	//came into this state. But even with a webserver started, reboot it since a battery operated
+	//device would drain the battery quite fast
+	rebootTicker.attach(MAX_RUNTIME_S, Reboot);
 
 	//initialize SPIFFS
 	if(!SPIFFS.begin(true)){

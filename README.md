@@ -13,6 +13,9 @@ The sleep time is stored persistent in memory (NVS)
 Analog input of the sensor is currently hard coded to analog input 0
 Digital output for triggering the sensor is currently hard coded to output 26
 
+When the ESP runs longer than 30mins, it will automatically reboots. This resolves problems
+if the ESP is in an "unwanted" state, or the ESP accidentally started AP/WEBSERVER
+
 ### Required libraries
 ```C++
 #include "PubSubClient.h" // tested with version 2.7
