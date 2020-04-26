@@ -237,6 +237,11 @@ bool RequestNewConfig = false;
 bool RequestStartAP = false; 
 
 /**
+ * Flag for the Ticker 
+ */ 
+bool TickerElapsed = false;
+
+/**
  * http server on port 80
  */ 
 AsyncWebServer server(80);
@@ -806,6 +811,7 @@ void SaveWebConfigData(AsyncWebServerRequest *request){
  */ 
 void Reboot()
 {
+	Serial.println("Rebooting");
 	//report sensor offline to the broker
 	if((MQTTClient.connected() == true))
 	{
@@ -1014,6 +1020,14 @@ void StartDeepSleep(){
 }
 
 
+void ISR_TickerElapsed()
+{
+	Serial.println("===== ISR_TickerElapsed() =====");
+	Serial.println("Setting Flag to true");
+	TickerElapsed = true;
+	Serial.println("===== ISR_TickerElapsed() =====");
+}
+
 /**
  * Setup function
  */ 
@@ -1030,7 +1044,12 @@ void setup(){
 	//when the ESP ran for MAX_RUNTIME_S, reboot it. It could be that the ESP accidentally
 	//came into this state. But even with a webserver started, reboot it since a battery operated
 	//device would drain the battery quite fast
-	rebootTicker.attach(MAX_RUNTIME_S, Reboot);
+	Serial.println("");
+	Serial.print("Starting Ticker with ");
+	Serial.print(MAX_RUNTIME_S);
+	Serial.println(" seconds");
+	rebootTicker.attach(MAX_RUNTIME_S, ISR_TickerElapsed);
+	
 
 	//initialize SPIFFS
 	if(!SPIFFS.begin(true)){
@@ -1049,6 +1068,11 @@ void setup(){
  */ 
 void loop(){
 	
+	if(TickerElapsed == true)
+	{
+		Reboot();
+	}
+
 	//statemachine
 	switch (currentState)
 	{

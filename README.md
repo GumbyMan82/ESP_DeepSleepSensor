@@ -13,8 +13,8 @@ The sleep time is stored persistent in memory (NVS)
 Analog input of the sensor is currently hard coded to analog input 0
 Digital output for triggering the sensor is currently hard coded to output 26
 
-When the ESP runs longer than 30mins, it will automatically reboots. This resolves problems
-if the ESP is in an "unwanted" state, or the ESP accidentally started AP/WEBSERVER
+When the ESP runs longer than 30mins, it will automatically reboot. This resolves problems
+if the ESP is in an "unwanted" state, or the ESP accidentally started AP/WEBSERVER.
 
 ### Required libraries
 ```C++
@@ -57,8 +57,7 @@ Command|Description
 AP | ESP starts as an access point with the IP 192.168.1.4 and starts the webserver for configuration
 CONFIG| ESP starts only the webserver for configuration
 
-Since during normal operation the ESP is in deep sleep quite often, those messages must be retained. After recieving an message, an empty payload is automatically sent to the topic. Otherwise the broker would still send the ESP into CONFIG or AP mode until something else changes the payload of the retained message.
-
+Since during normal operation the ESP is in deep sleep quite often, those messages must be retained. After recieving an message, an empty payload is automatically sent to this topic in order to delete the retained messages. Otherwise the broker would still send the ESP into CONFIG or AP mode until something else changes the payload of the retained message.
 
 ## Webserver
 The configuration page of the webserver is being read from SPIFFS. Therefore the data folder from this repository must be uploaded to the ESPs file system.
@@ -85,5 +84,5 @@ STATE | CONDITION | NEXT STATE | DESCRIPTION
  ```OPERATION``` | _(none)_ | ```DEEP_SLEEP``` | A MQTT message with the status and the sensor readings is published in this state. Afterwards, ESP is being put into deep sleep
  ```DEEP_SLEEP``` | _(none)_ | _(none)_ | sleeping. A state message is published before ESP goes to sleep
 
-If the configuration is OK and connection to WiFi and MQTT is succesful, a normal state transition looks like the following
-```START``` &rarr; ```READ_CONFIG``` &rarr; ```CONNECT_WIFI``` &rarr; ```CONNECT_WIFI``` &rarr; ```OPERATION``` &rarr; ```DEEP_SLEEP```
+If the configuration is OK and connection to WiFi and MQTT is successful, a normal state transition looks like the following
+```START``` &rarr; ```READ_CONFIG``` &rarr; ```CONNECT_WIFI``` &rarr; ```CONNECT_MQTT``` &rarr; ```OPERATION``` &rarr; ```DEEP_SLEEP```
