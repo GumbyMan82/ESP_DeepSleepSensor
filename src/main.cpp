@@ -25,6 +25,12 @@ const char* version = "1.0";
 
 
 /**
+ * Time at which the MQTT connection is being checked in WEBSERVER mode
+ */
+#define WEBSERVER_MQTT_RECHECK_TIME_S 60*5
+
+
+/**
  * The default sleep time in [s]
  */ 
 #define DEF_TIME_TO_SLEEP  5*60        /* Time ESP32 will go to sleep (in seconds) */
@@ -197,7 +203,7 @@ enum State
 	START_AP = 32, 
 	START_WEBSERVER = 64,
 	WEBSERVER_RUNNING = 128,
-	NONE = 256,
+	NONE = 265,
 	ERROR = 512
 };
 
@@ -242,6 +248,18 @@ bool RequestStartAP = false;
 bool TickerElapsed = false;
 
 /**
+ * Flag for the MQTT connection check ticker
+ * if this flag is true, the main loop should recheck the MQTT connection and
+ * if succeeded, reboot the esp
+ */ 
+bool MQTTConnectionCheck = false;
+
+/**
+ * Flag for checking if the ESP runs in AP mode
+ */ 
+bool APMode = false;
+
+/**
  * http server on port 80
  */ 
 AsyncWebServer server(80);
@@ -256,6 +274,12 @@ DNSServer dnsServer;
  * Ticker that reboots the ESP when elapsed
  */
 Ticker rebootTicker;
+
+
+/**
+ * Ticker that is used for rechecking the MQTT connection
+ */ 
+Ticker MQTTRecheckTicker;
 
 //################# runtime data ################
 
@@ -495,15 +519,7 @@ String GetWifiSSID(){
  * @param SSID SSID to write
  */ 
 void SetWiFiSSID(String SSID){
-	Serial.println("");
-	Serial.println("===== SetWiFiSSID =====");
-	Serial.print("Saving SSID: ");
-	Serial.print(SSID);
-	Serial.print(" Length: ");
-	delay(100);
-	Serial.println(preferences.putString("SSID", SSID));
-	Serial.println("===== SetWiFiSSID =====");
-	Serial.println("");
+	preferences.putString("SSID", SSID);
 }
 
 
@@ -512,7 +528,6 @@ void SetWiFiSSID(String SSID){
  * @return Key or empty if an error occured
  */ 
 String GetWifiKey(){
-	delay(100);
 	return preferences.getString("WiFiKey", "");
 }
 
@@ -522,7 +537,6 @@ String GetWifiKey(){
  * @param Key Key to write
  */ 
 void SetWiFiKey(String Key){
-	delay(100);
 	preferences.putString("WiFiKey", Key);
 }
 
@@ -532,7 +546,6 @@ void SetWiFiKey(String Key){
  * @return MQTT username
  */ 
 String GetMQTTUser(){
-	delay(100);
 	return preferences.getString("MQTTUser", "");
 }
 
@@ -542,7 +555,6 @@ String GetMQTTUser(){
  * @param user user to save
  */ 
 void SetMQTTUser(String user){
-	delay(100);
 	preferences.putString("MQTTUser", user);
 }
 
@@ -553,7 +565,6 @@ void SetMQTTUser(String user){
  * @return MQTT password
  */ 
 String GetMQTTPassword(){
-	delay(100);
 	return preferences.getString("MQTTPwd", "");
 }
 
@@ -563,7 +574,6 @@ String GetMQTTPassword(){
  * @param password password to save
  */ 
 void SetMQTTPassword(String password){
-	delay(100);
 	preferences.putString("MQTTPwd", password);
 }
 
@@ -572,7 +582,6 @@ void SetMQTTPassword(String password){
  * Reads the MQTT broker from the preferences
  */ 
 String GetMQTTBroker(){
-	delay(100);
 	return preferences.getString("MQTTBroker", "");
 }
 
@@ -581,7 +590,17 @@ String GetMQTTBroker(){
  * Saves the MQTT topic to preferences
  */ 
 void SetMQTTTopic(String topic){
-	delay(100);
+	//if the topic ends with a /, remove it since it will be added automatically with the /State /mode topics
+	unsigned int length = topic.length();
+	if(topic.charAt(length-1) == '/')
+	{
+		Serial.println("Topic before manipulation: ");
+		Serial.print(topic);
+		topic.remove(length-1);
+		Serial.println("Topic after manipulation: ");
+		Serial.print(topic);
+		Serial.println("");
+	}
 	preferences.putString("MQTTTopic", topic);
 }
 
@@ -590,7 +609,6 @@ void SetMQTTTopic(String topic){
  * Reads the MQTT topic from the preferences
  */ 
 String GetMQTTTopic(){
-	delay(100);
 	return preferences.getString("MQTTTopic", "");
 }
 
@@ -600,7 +618,6 @@ String GetMQTTTopic(){
  * @param broker the hostname or IP of the broker
  */ 
 void SetMQTTBroker(String broker){
-	delay(100);
 	preferences.putString("MQTTBroker", broker);
 }
 
@@ -611,7 +628,6 @@ void SetMQTTBroker(String broker){
  */ 
 void SetSensorInput(int index)
 {
-	delay(100);
 	preferences.putInt("AnalogInput", index);
 }
 
@@ -622,7 +638,6 @@ void SetSensorInput(int index)
  */ 
 int GetSensorInput()
 {
-	delay(100);
 	return preferences.getInt("AnalogInput", -1);
 }
 
@@ -781,8 +796,8 @@ void SaveWebConfigData(AsyncWebServerRequest *request){
 	}
 
 	//save MQTT topic
-	if(request->hasParam("MQTTPassword", true)){
-		//read the SSID from the POST header
+	if(request->hasParam("MQTTTopic", true)){
+		//read the MQTT topic from the POST header
 		message = request->getParam("MQTTTopic", true)->value();
 		//save it to preferences
 		SetMQTTTopic(message);
@@ -799,10 +814,6 @@ void SaveWebConfigData(AsyncWebServerRequest *request){
 		message = request->getParam("TriggerOutput", true)->value();
 		SetTriggerOutput(message.toInt());
 	}
-
-	
-
-	//preferences.end();
 }
 
 
@@ -871,6 +882,15 @@ String Processor(const String& var){
 }
 
 
+void ISR_MQTTCheckTickerElapsed(){
+	
+	Serial.println("===== ISR_MQTTCheckTickerElapsed() =====");
+	Serial.println("Setting flag for rechecking MQTT connection");
+	MQTTConnectionCheck = true;
+	Serial.println("===== ISR_MQTTCheckTickerElapsed() =====");
+}
+
+
 /**
  * Starts a webserver for configuration
  */ 
@@ -913,6 +933,9 @@ void StartWebServer(){
 	{
 		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"CONFIG\"}");
 	}
+
+	//start the ticker for rechecking the MQTT connection
+	MQTTRecheckTicker.attach(WEBSERVER_MQTT_RECHECK_TIME_S, ISR_MQTTCheckTickerElapsed);
 }
 
 
@@ -1019,14 +1042,20 @@ void StartDeepSleep(){
 
 }
 
-
-void ISR_TickerElapsed()
+/**
+ * Interrupt routine when the reboot ticker is elapsed.
+ * Restarts the ESP
+ */
+void ISR_RebootTickerElapsed()
 {
 	Serial.println("===== ISR_TickerElapsed() =====");
 	Serial.println("Setting Flag to true");
 	TickerElapsed = true;
 	Serial.println("===== ISR_TickerElapsed() =====");
 }
+
+
+
 
 /**
  * Setup function
@@ -1048,7 +1077,7 @@ void setup(){
 	Serial.print("Starting Ticker with ");
 	Serial.print(MAX_RUNTIME_S);
 	Serial.println(" seconds");
-	rebootTicker.attach(MAX_RUNTIME_S, ISR_TickerElapsed);
+	rebootTicker.attach(MAX_RUNTIME_S, ISR_RebootTickerElapsed);
 	
 
 	//initialize SPIFFS
@@ -1167,6 +1196,7 @@ void loop(){
 	case START_AP:			/* start wifi access point */
 		Serial.print("Current state: START_AP - ");
 		nextState = START_WEBSERVER;
+		APMode = true;
 		StartAP();
 		Serial.println("Next state: START_WEBSERVER");
 		break;
@@ -1181,6 +1211,19 @@ void loop(){
 
 	case WEBSERVER_RUNNING:
 		dnsServer.processNextRequest();
+
+		//if the ticker for rechecking the MQTT connection is elapsed and we are NOT in AP mode
+		if(MQTTConnectionCheck == true && APMode == false){
+			MQTTConnectionCheck = false;
+			//In webserver mode we want to reboot if the MQTT connection was successful. 
+			//if the ESP wakes up and couldn't connect to MQTT it (sporadically) make sure that
+			//it rechecks the connection and then reboots. The default time is WEBSERVER_MQTT_RECHECK_TIME_S
+			if(ConnectMQTT())
+			{
+				MQTTRecheckTicker.detach();
+				Reboot();
+			}
+		}
 		break;
 
 		
