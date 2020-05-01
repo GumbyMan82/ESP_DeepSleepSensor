@@ -8,7 +8,7 @@
 #include <SPIFFS.h>
 #include <Ticker.h>
 
-const char* version = "1.0";
+const char* version = "1.1";
 
 //################# DEFINES ################
 /**
@@ -241,6 +241,11 @@ bool RequestNewConfig = false;
  * shows if there was a request to start the access point
  */
 bool RequestStartAP = false; 
+
+/**
+ * Shows if the webserver was forced to start (--> by MQTT data)
+ */ 
+bool ForceStartWebserver = false;
 
 /**
  * Flag for the Ticker 
@@ -494,6 +499,7 @@ void MQTT_Callback(char* topic, byte* payload, unsigned int length){
 
 		if(strcmp(data, "CONFIG") == 0)
 		{
+			ForceStartWebserver = true;
 			RequestNewConfig = true;
 			Serial.println("Switching to Mode CONFIG");
 		}
@@ -933,9 +939,6 @@ void StartWebServer(){
 	{
 		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"CONFIG\"}");
 	}
-
-	//start the ticker for rechecking the MQTT connection
-	MQTTRecheckTicker.attach(WEBSERVER_MQTT_RECHECK_TIME_S, ISR_MQTTCheckTickerElapsed);
 }
 
 
@@ -1053,8 +1056,6 @@ void ISR_RebootTickerElapsed()
 	TickerElapsed = true;
 	Serial.println("===== ISR_TickerElapsed() =====");
 }
-
-
 
 
 /**
@@ -1205,6 +1206,12 @@ void loop(){
 	case START_WEBSERVER:	/* start webserver with configuration interface */
 		Serial.println("Current state: START_WEBSERVER");
 		nextState = WEBSERVER_RUNNING;
+
+		//if the webserver was started accidentally (be sporadic loosing pf MQTT connection) recheck the MQTT connection each 
+		//WEBSERVER_MQTT_RECHECK_TIME_S. If the connection was successful, the ESP restarts
+		if(ForceStartWebserver == false){
+			MQTTRecheckTicker.attach(WEBSERVER_MQTT_RECHECK_TIME_S, ISR_MQTTCheckTickerElapsed);
+		}		
 		StartWebServer();
 		Serial.println("Next state: WEBSERVER_RUNNING");
 		break;
