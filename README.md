@@ -63,6 +63,7 @@ Since during normal operation the ESP is in deep sleep quite often, those messag
 The configuration page of the webserver is being read from SPIFFS. Therefore the data folder from this repository must be uploaded to the ESPs file system.
 The Webserver listens to __port 80__.
 After applying the configuration in the webserver, the ESP is restarted
+When the webserver was started without AP mode (e.g. if the MQTT broker sporadically was offline) the MQTT connection is checked each 5 minutes. A successful MQTT connection will then __restart__ the ESP.
 
 ## Acces point mode
 In AP mode, the ESP creates a WLAN with the SSID ```ESP32-DeepSleepSensor```. No credentials are required.
