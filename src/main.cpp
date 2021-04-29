@@ -204,7 +204,8 @@ enum State
 	START_WEBSERVER = 64,
 	WEBSERVER_RUNNING = 128,
 	NONE = 265,
-	ERROR = 512
+	ERROR = 512,
+	READ_SENSOR = 1024
 };
 
 /**
@@ -269,6 +270,11 @@ bool APMode = false;
  */ 
 AsyncWebServer server(80);
 
+
+/**
+ * If set to true, the ESP will constantly read sensor data instead of going to deep sleep and reboot
+ */ 
+bool CyclicSensorReading = false;
 
 /**
  * DNSServer for captive portal
@@ -403,11 +409,19 @@ void print_wakeup_reason(){
 uint16_t ReadAnalogValue(uint8_t ADCChannel, int PowerChannel){
 	
 	//fail fast if parameters are wrong
-	if(ADCChannel < 0 || ADCChannel > 255)
+	if(ADCChannel < 0 || ADCChannel > 255){
+		Serial.println("Invalid ADC Channel - exiting");
+		Serial.println(ADCChannel);
 		return 0;
+	}
+		
 	
-	if(PowerChannel < 0 || PowerChannel > 255)
+	if(PowerChannel < 0 || PowerChannel > 255){
+		Serial.println("Invalid trigger channel - exiting");
+		Serial.println(PowerChannel);
 		return 0;
+	}
+		
 	
 	int i = 0;
 	int filter = 10;
@@ -1181,6 +1195,10 @@ void loop(){
 			Serial.println("Next state: START_AP");
 			MQTTClient.publish(String(MqttTopic + "/Mode").c_str(), "", true);	//clear the retained topic
 		}
+		else if(CyclicSensorReading){
+			nextState = READ_SENSOR;
+			Serial.println("Start cyclic reading of sensor data");
+		}
 		else{
 			PublishState();
 			nextState = DEEP_SLEEP;
@@ -1236,6 +1254,11 @@ void loop(){
 		
 	case ERROR:				/* error happened. Currently not used */
 	case NONE:				/* currently not used */
+	case READ_SENSOR:
+		Serial.println(ReadAnalogValue(AnalogInput, TriggerOutput));
+		delay(1000);
+		nextState = READ_SENSOR;
+		break;
 	default:				/* restart ESP */
 		Reboot();
 		break;
