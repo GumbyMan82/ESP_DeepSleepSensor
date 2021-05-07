@@ -292,6 +292,12 @@ Ticker rebootTicker;
  */ 
 Ticker MQTTRecheckTicker;
 
+
+/**
+ * Analog value that is being read from the sensor
+ */
+uint16_t AnalogValue = 0;
+
 //################# runtime data ################
 
 
@@ -452,7 +458,7 @@ void PublishState(){
 	{
 		char cJSONString[80];
 		cJSONString[0] = '\0';
-		sprintf(cJSONString, "{\"state\" : \"ON\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ", ReadAnalogValue(AnalogInput, TriggerOutput), GetSleepDelaySecondsOrDefault());
+		sprintf(cJSONString, "{\"state\" : \"ON\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ", AnalogValue, GetSleepDelaySecondsOrDefault());
 		Serial.println(cJSONString);
 		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), cJSONString);
 	}
@@ -1200,6 +1206,8 @@ void loop(){
 			Serial.println("Start cyclic reading of sensor data");
 		}
 		else{
+			//read and store the analog value
+			AnalogValue = ReadAnalogValue(AnalogInput, TriggerOutput);
 			PublishState();
 			nextState = DEEP_SLEEP;
 			Serial.println("Next state: DEEP_SLEEP");
