@@ -1031,7 +1031,8 @@ bool ConnectMQTT(){
 
 	for(int i = 0; i<MQTT_CONNECTION_RETRIES; i++)
 	{
-		if(MQTTClient.connect(MQTT_CLIENT_ID, MqttUser.c_str(), MqttPassword.c_str(), StateTopic.c_str(), 1, true,"{\"state\" : \"OFF\"}"))
+		//if(MQTTClient.connect(MQTT_CLIENT_ID, MqttUser.c_str(), MqttPassword.c_str(), StateTopic.c_str(), 1, true,"{\"state\" : \"OFF\"}"))
+		if(MQTTClient.connect(MQTT_CLIENT_ID, MqttUser.c_str(), MqttPassword.c_str()))
 		{
 			Serial.println("connected to MQTT broker");
 			Serial.print("Topic subscribed: ");
