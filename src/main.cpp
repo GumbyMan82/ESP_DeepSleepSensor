@@ -96,17 +96,17 @@ const char* version = "1.1";
 /**
  * MQTT State --> SLEEP
  */ 
-#define STATE_SLEEP	"SLEEP"
+#define STATE_SLEEP	(char*)"SLEEP"
 
 /**
  * MQTT State --> ON
  */ 
-#define STATE_ON	"ON"
+#define STATE_ON	(char*)"ON"
 
 /**
  * MQTT State --> OFF
  */ 
-#define STATE_OFF	"OFF"
+#define STATE_OFF	(char*)"OFF"
 //################# DEFINES ################
 
 
@@ -453,12 +453,12 @@ uint16_t ReadAnalogValue(uint8_t ADCChannel, int PowerChannel){
 /**
  * Publishes the data via MQTT in JSON format
  */ 
-void PublishState(){
+void PublishState(char* state){
 	if(MQTTClient.connected())
 	{
 		char cJSONString[80];
 		cJSONString[0] = '\0';
-		sprintf(cJSONString, "{\"state\" : \"ON\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ", AnalogValue, GetSleepDelaySecondsOrDefault());
+		sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault());
 		Serial.println(cJSONString);
 		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), cJSONString);
 	}
@@ -852,7 +852,8 @@ void Reboot()
 	//report sensor offline to the broker
 	if((MQTTClient.connected() == true))
 	{
-		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"OFF\"}");
+		//MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"OFF\"}");
+		PublishState(STATE_OFF);
 	}
 	MQTTClient.disconnect();
 	server.end();
@@ -1052,7 +1053,8 @@ void StartDeepSleep(){
 	" Seconds");
 
 	Serial.println("Going to sleep now");
-	MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"SLEEP\"}");
+	//MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"SLEEP\"}");
+	PublishState(STATE_SLEEP);
 	delay(1000);
 	Serial.flush(); 
 
@@ -1208,7 +1210,7 @@ void loop(){
 		else{
 			//read and store the analog value
 			AnalogValue = ReadAnalogValue(AnalogInput, TriggerOutput);
-			PublishState();
+			PublishState(STATE_ON);
 			nextState = DEEP_SLEEP;
 			Serial.println("Next state: DEEP_SLEEP");
 		}
