@@ -450,17 +450,28 @@ uint16_t ReadAnalogValue(uint8_t ADCChannel, int PowerChannel){
 }
 
 
+char* DataToJSonString(char* state, uint16_t analogValue, int SleepDelay){
+	//static needed since its a volatile memory otherwise
+	static char cJSONString[80];
+	cJSONString[0] = '\0';
+	sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault());
+	Serial.println(cJSONString);
+	return cJSONString;
+}
+
+
 /**
  * Publishes the data via MQTT in JSON format
  */ 
 void PublishState(char* state){
 	if(MQTTClient.connected())
 	{
-		char cJSONString[80];
-		cJSONString[0] = '\0';
-		sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault());
-		Serial.println(cJSONString);
-		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), cJSONString);
+		//char cJSONString[80];
+		//cJSONString[0] = '\0';
+		//sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault());
+		//Serial.println(cJSONString);
+		//MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), cJSONString);
+		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), DataToJSonString(state, AnalogValue, GetSleepDelaySecondsOrDefault()));
 	}
 }
 
@@ -1053,7 +1064,6 @@ void StartDeepSleep(){
 	" Seconds");
 
 	Serial.println("Going to sleep now");
-	//MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), "{\"state\" : \"SLEEP\"}");
 	PublishState(STATE_SLEEP);
 	delay(1000);
 	Serial.flush(); 
