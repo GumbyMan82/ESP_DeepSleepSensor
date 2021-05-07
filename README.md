@@ -30,9 +30,10 @@ e.g. if you configure ```Home/MyGardenSensor``` the state message will be posted
 The message payload is a JSON formatted string
 ```JSON
 {
-    "state" : "ON|OFF|SLEEP", 
+    "state" : "ON|OFF|SLEEP|CONFIG", 
     "value" : "%d", 
-    "SleepTime" : "%d"
+    "SleepTime" : "%d",
+    "SignalQuality": "%d"
 }
 ```
 ```state``` state of the ESP. ON --> running, OFF --> when performing a soft reset or within last will, SLEEP --> when in deep sleep mode
