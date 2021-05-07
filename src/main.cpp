@@ -298,6 +298,11 @@ Ticker MQTTRecheckTicker;
  */
 uint16_t AnalogValue = 0;
 
+/**
+ * RSSI of the WiFI Signal
+ */ 
+int8_t RSSI = 0;
+
 //################# runtime data ################
 
 
@@ -454,7 +459,7 @@ char* DataToJSonString(char* state, uint16_t analogValue, int SleepDelay){
 	//static needed since its a volatile memory otherwise
 	static char cJSONString[80];
 	cJSONString[0] = '\0';
-	sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault());
+	sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\", \"SignalQuality\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault(), RSSI);
 	Serial.println(cJSONString);
 	return cJSONString;
 }
@@ -975,6 +980,24 @@ void StartWebServer(){
 
 
 /**
+ * Returns the RSSI in dBm as a value of Quality between 0% and 100%
+ */ 
+uint8_t GetRSSIAsQuality(int8_t RSSIdBm){
+	uint8_t quality = 0;
+
+	if(RSSIdBm <= -100){
+		quality = 0;
+	} else if (RSSIdBm >= -50){
+		quality = 100;
+	} else {
+		quality = uint8_t(2*(RSSIdBm + 100));
+	}
+
+	return quality;
+}
+
+
+/**
  * connects to the WIFI using the credentials.
  * @return TRUE if the connection was successful, FALSE if the connection couldn't be established within the defined retries
  */ 
@@ -1002,6 +1025,10 @@ bool ConnectWiFi(){
 			if(WiFi.status() == WL_CONNECTED){
 				Serial.print("Connected to WiFi. IP: ");
 				Serial.println(WiFi.localIP());
+				RSSI = GetRSSIAsQuality(WiFi.RSSI());
+				Serial.print("WiFi signal strength: ");
+				Serial.print(RSSI);
+				Serial.println(" %");
 				return true;
 			}
 			delay(500);
