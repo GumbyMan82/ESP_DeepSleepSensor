@@ -459,7 +459,7 @@ uint16_t ReadAnalogValue(uint8_t ADCChannel, int PowerChannel){
  * Converts the parsed data into a json string
  */ 
 char* DataToJSonString(char* state, uint16_t analogValue, int SleepDelay){
-	//static needed since its a volatile memory otherwise
+	//static needed since it's a volatile memory otherwise
 	static char cJSONString[80];
 	cJSONString[0] = '\0';
 	sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\", \"SignalQuality\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault(), RSSI);
@@ -474,11 +474,6 @@ char* DataToJSonString(char* state, uint16_t analogValue, int SleepDelay){
 void PublishState(char* state){
 	if(MQTTClient.connected())
 	{
-		//char cJSONString[80];
-		//cJSONString[0] = '\0';
-		//sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault());
-		//Serial.println(cJSONString);
-		//MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), cJSONString);
 		MQTTClient.publish(String(MqttTopic + "/" + MQTT_STATE_TOPIC).c_str(), DataToJSonString(state, AnalogValue, GetSleepDelaySecondsOrDefault()));
 	}
 }
