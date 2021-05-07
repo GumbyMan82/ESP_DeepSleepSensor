@@ -455,6 +455,9 @@ uint16_t ReadAnalogValue(uint8_t ADCChannel, int PowerChannel){
 }
 
 
+/** 
+ * Converts the parsed data into a json string
+ */ 
 char* DataToJSonString(char* state, uint16_t analogValue, int SleepDelay){
 	//static needed since its a volatile memory otherwise
 	static char cJSONString[80];
