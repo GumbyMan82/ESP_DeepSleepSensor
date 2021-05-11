@@ -7,8 +7,9 @@
 #include "ESPAsyncWebServer.h"
 #include <SPIFFS.h>
 #include <Ticker.h>
+#include <Update.h>
 
-const char* version = "1.1";
+const char* version = "1.2";
 
 //################# DEFINES ################
 /**
@@ -933,6 +934,45 @@ void ISR_MQTTCheckTickerElapsed(){
 
 
 /**
+ * Handles the OTA file upload
+ */
+// handle the upload of the firmware
+void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+{
+	Serial.println("handleUpload begin");
+
+    // handle upload and update
+    if (!index)
+    {
+        Serial.printf("Update: %s\n", filename.c_str());
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN))
+        { //start with max available size
+            Update.printError(Serial);
+        }
+    }
+
+    /* flashing firmware to ESP*/
+    if (len)
+    {
+        Update.write(data, len);
+    }
+
+    if (final)
+    {
+        if (Update.end(true))
+        { //true to set the size to the current progress
+            Serial.printf("Update Success: %ub written\nRebooting...\n", index+len);
+			ESP.restart();
+        }
+        else
+        {
+            Update.printError(Serial);
+        }
+    }
+} 
+
+
+/**
  * Starts a webserver for configuration
  */ 
 void StartWebServer(){
@@ -964,6 +1004,11 @@ void StartWebServer(){
         request->send(200, "text/plain", "Data written, rebooting");
 		Reboot();
     });
+
+	server.on("/form_upload", HTTP_POST, [](AsyncWebServerRequest *request){
+        request->send(200);
+    }, handleUpload);
+
 
 	server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
 

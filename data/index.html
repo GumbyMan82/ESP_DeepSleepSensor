@@ -96,6 +96,19 @@
 						</div>
 						<button type="submit" class="btn btn-primary mb-2">Save & Reboot</button>
 					</form>
+					<form method="POST" action="form_upload" enctype="multipart/form-data">
+						<div class="container bg-light">
+							<p class="lead">Firmware upload</p>
+							<div class="form-group row">
+								<label for="colFormFirmware" class="col-sm-2 col-form-label">Firmware:</label>
+								<div class="col-sm-10">
+									<input type="file" class="form-control" name="Firmware" id="colFormFirmware" placeholder="Firmware" value="%FIRMWARE%" required>
+									<small  class="form-text text-muted">firmware to be uploaded</small>
+								</div>
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary mb-2">Upload & Reboot</button>
+					</form>
 				</div>
             </div>
         </div>
