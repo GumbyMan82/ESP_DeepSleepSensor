@@ -7,7 +7,7 @@ So if the broker sets invalid data (such as values that cannot be casted or inva
 The sleep time is stored persistent in memory (NVS)
 ## Required hardware / software
 - ESP32.
-- Some kinde of sensor
+- Some kind of sensor
 - MQTT broker
 
 Analog input of the sensor is currently hard coded to analog input 0
