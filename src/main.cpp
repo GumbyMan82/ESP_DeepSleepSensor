@@ -8,6 +8,7 @@
 #include <SPIFFS.h>
 #include <Ticker.h>
 #include <Update.h>
+#include "ESPRandom.h"
 
 const char* version = "1.2";
 
@@ -139,6 +140,11 @@ WiFiClient espClient;
  * MQTT client using PubSubClient library
  */ 
 PubSubClient MQTTClient(espClient);
+
+/**
+ * ID of the MQTt client
+ */ 
+String MqttClientID = "";
 
 /**
  * SSID of the wireless lan to connect to
@@ -463,7 +469,7 @@ char* DataToJSonString(char* state, uint16_t analogValue, int SleepDelay){
 	//static needed since it's a volatile memory otherwise
 	static char cJSONString[80];
 	cJSONString[0] = '\0';
-	sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\", \"SignalQuality\" : \"%d\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault(), RSSI);
+	sprintf(cJSONString, "{\"state\" : \"%s\", \"value\" : \"%d\", \"SleepTime\" : \"%d\", \"SignalQuality\" : \"%d\", \"version\" : \"%s\"} ",state ,AnalogValue, GetSleepDelaySecondsOrDefault(), RSSI, version);
 	Serial.println(cJSONString);
 	return cJSONString;
 }
@@ -611,6 +617,24 @@ String GetMQTTPassword(){
 
 
 /**
+ * Reads the MQTT client ID from the preferences
+ * @return: MQTT client ID
+ */ 
+String GetMQTTClientID(){
+	return preferences.getString("MQTTClientID", "");
+}
+
+
+/**
+ * Saves the MQTT client ID to preferences
+ * @return: MQTT client ID
+ */ 
+void SetMQTTClientID(String ID){
+	preferences.putString("MQTTClientID", ID);
+}
+
+
+/**
  * Saves the MQTT password to preferences
  * @param password password to save
  */ 
@@ -721,6 +745,15 @@ ConfigState ReadConfig(){
 	MqttTopic = GetMQTTTopic();
 	AnalogInput = GetSensorInput();
 	TriggerOutput = GetTriggerOutput();
+
+	MqttClientID = GetMQTTClientID();
+	if (MqttClientID == ""){
+		uint8_t uuid[16];
+  		ESPRandom::uuid(uuid);
+  		Serial.println(ESPRandom::uuidToString(uuid));
+		SetMQTTClientID(ESPRandom::uuidToString(uuid));
+		MqttClientID = ESPRandom::uuidToString(uuid);
+	}
 
 
 	Serial.print("Sleeptime in [s]: ");
@@ -920,6 +953,10 @@ String Processor(const String& var){
 	if(var == "VERSION"){
 		return version;
 	}
+
+	if(var == "CLIENT_ID"){
+		return MqttClientID;
+	}
 	return String();
 }
 
@@ -1102,7 +1139,8 @@ bool ConnectMQTT(){
 	for(int i = 0; i<MQTT_CONNECTION_RETRIES; i++)
 	{
 		//if(MQTTClient.connect(MQTT_CLIENT_ID, MqttUser.c_str(), MqttPassword.c_str(), StateTopic.c_str(), 1, true,"{\"state\" : \"OFF\"}"))
-		if(MQTTClient.connect(MQTT_CLIENT_ID, MqttUser.c_str(), MqttPassword.c_str()))
+		//if(MQTTClient.connect(MQTT_CLIENT_ID, MqttUser.c_str(), MqttPassword.c_str()))
+		if(MQTTClient.connect(MqttClientID.c_str(), MqttUser.c_str(), MqttPassword.c_str()))
 		{
 			Serial.println("connected to MQTT broker");
 			Serial.print("Topic subscribed: ");
