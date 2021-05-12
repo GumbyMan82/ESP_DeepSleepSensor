@@ -33,6 +33,11 @@ const char* version = "1.2";
 
 
 /**
+ * Delay before the ESP reboots
+ */
+#define REBOOT_DELAY_S 5 
+
+/**
  * The default sleep time in [s]
  */ 
 #define DEF_TIME_TO_SLEEP  5*60        /* Time ESP32 will go to sleep (in seconds) */
@@ -260,6 +265,12 @@ bool ForceStartWebserver = false;
  */ 
 bool TickerElapsed = false;
 
+
+/**
+ * Flag for reboot ticker after changing the config
+ */
+bool ConfigRebootTickerElapsed = false; 
+
 /**
  * Flag for the MQTT connection check ticker
  * if this flag is true, the main loop should recheck the MQTT connection and
@@ -299,6 +310,11 @@ Ticker rebootTicker;
  */ 
 Ticker MQTTRecheckTicker;
 
+
+/**
+ * Ticker that reboots the ESP when elapsed
+ */
+Ticker ConfigRebootTicker; 
 
 /**
  * Analog value that is being read from the sensor
@@ -970,6 +986,16 @@ void ISR_MQTTCheckTickerElapsed(){
 }
 
 
+void ISR_ConfigRebootTickerElapsed(){
+	
+	Serial.println("===== ISR_ConfigRebootTickerElapsed() =====");
+	Serial.println("Setting flag for rebooting after configuration change");
+	ConfigRebootTickerElapsed = true;
+	Serial.println("===== ISR_ConfigRebootTickerElapsed() =====");
+}
+
+
+
 /**
  * Handles the OTA file upload
  */
@@ -1038,8 +1064,11 @@ void StartWebServer(){
 
 	server.on("/form_submit", HTTP_POST, [](AsyncWebServerRequest *request){
         SaveWebConfigData(request);
-        request->send(200, "text/plain", "Data written, rebooting");
-		Reboot();
+        //request->send(200, "text/plain", "Data written, rebooting");
+		request->send(SPIFFS, "/reboot.html", String(), false, Processor);
+		ConfigRebootTicker.attach(REBOOT_DELAY_S, ISR_ConfigRebootTickerElapsed);
+		//delay(1000);
+		//Reboot();
     });
 
 	server.on("/form_upload", HTTP_POST, [](AsyncWebServerRequest *request){
@@ -1239,7 +1268,7 @@ void setup(){
  */ 
 void loop(){
 	
-	if(TickerElapsed == true)
+	if(TickerElapsed == true || ConfigRebootTickerElapsed == true)
 	{
 		Reboot();
 	}
